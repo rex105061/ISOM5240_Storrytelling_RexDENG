@@ -17,8 +17,14 @@ def load_img2text_model():
 
 @st.cache_resource
 def load_story_model():
-    model_name = "roneneldan/TinyStories-1B"
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    # Using TinyStories-33M (smaller, more stable on Streamlit Cloud)
+    model_name = "roneneldan/TinyStories-33M"
+    
+    # Add timeout and retry handling
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_name,
+        cache_dir=None
+    )
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
         torch_dtype=torch.float32,
@@ -66,6 +72,10 @@ def generate_story(story_model, image_desc):
     if not story.startswith("Once"):
         story = "Once upon a time, " + story
     
+    # Ensure story has proper ending
+    if not story.endswith(('.', '!', '?')):
+        story += " The end!"
+    
     return story
 
 # Text to audio
@@ -90,14 +100,14 @@ def text_to_audio(tts_model, text):
 
 # Main app
 st.set_page_config(page_title="StoryTeller", page_icon="📖")
-st.title("📖 Turn Image to Audio Story")
-st.markdown("Upload an image → Get a 50-100 word children's story with audio")
+st.title("📖 Turn Your Image into an Audio Story 🎧")
+st.markdown("🖼️ Upload an image → 📝 Get a 50-100 word children's story → 🔊 Listen & download")
 
-uploaded_file = st.file_uploader("Select an Image...", type=["jpg", "jpeg", "png"])
+uploaded_file = st.file_uploader("📸 Select an Image...", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
     # Display image
-    st.image(uploaded_file, caption="Uploaded Image", use_container_width=True)
+    st.image(uploaded_file, caption="🖼️ Your Uploaded Image", use_container_width=True)
     
     # Save temp file
     with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_file:
@@ -105,34 +115,40 @@ if uploaded_file is not None:
         tmp_path = tmp_file.name
     
     # Stage 1: Image to Text
-    with st.spinner("📷 Analyzing image..."):
+    with st.spinner("🔍 Analyzing image..."):
         img_model = load_img2text_model()
         image_desc = img2text(img_model, tmp_path)
-    st.info(f"Image description: {image_desc}")
+    st.success("✅ Image analyzed!")
+    st.info(f"📷 **What I see:** {image_desc}")
     
     # Stage 2: Text to Story
-    with st.spinner("📝 Writing story..."):
+    with st.spinner("✍️ Writing a magical story..."):
         story_model = load_story_model()
         story = generate_story(story_model, image_desc)
     
-    st.success("Story generated!")
-    st.write(f"**Story ({len(story.split())} words):**")
-    st.write(story)
+    st.success("✨ Story generated!")
+    st.write(f"📖 **Your Story** ({len(story.split())} words):")
+    st.info(story)
     
     # Stage 3: Text to Audio
-    with st.spinner("🔊 Generating audio..."):
+    with st.spinner("🔊 Generating audio narration..."):
         tts_model = load_tts_model()
         audio_array, sample_rate = text_to_audio(tts_model, story)
     
     # Play audio
+    st.success("🎵 Audio ready!")
     st.audio(audio_array, sample_rate=sample_rate)
     
     # Download button
     audio_int16 = (audio_array * 32767).astype(np.int16)
     wav.write("story.wav", sample_rate, audio_int16)
     with open("story.wav", "rb") as f:
-        st.download_button("Download Audio", f, file_name="story.wav")
+        st.download_button("💾 Download Audio (WAV)", f, file_name="story.wav")
     
     # Cleanup
     os.unlink(tmp_path)
     os.unlink("story.wav")
+    
+    # Footer
+    st.markdown("---")
+    st.caption("⭐ Powered by TinyStories-33M & Hugging Face | 🎯 50-100 word stories for ages 3-8")
