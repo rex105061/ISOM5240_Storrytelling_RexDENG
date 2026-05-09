@@ -1,11 +1,10 @@
 streamlit
 transformers<5.0.0
 torch
+torchvision
 torchaudio
+pillow
 scipy
 numpy
 sentencepiece
 protobuf
-# 如果使用 bark 需要:
-# encodec
-# huggingface_hub
