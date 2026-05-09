@@ -8,3 +8,4 @@ numpy
 sentencepiece
 protobuf
 accelerate
+huggingface_hub
