@@ -47,6 +47,17 @@ def img2text(model, image_path):
 
 # Generate story (50-100 words)
 def generate_story(story_model, image_desc):
+    """
+    Generate a children's story based on image description.
+    
+    Args:
+        story_model (dict): Dictionary containing 'tokenizer' and 'model' for TinyStories
+        image_desc (str): Text description extracted from the image
+    
+    Returns:
+        str: A 50-100 word children's story with happy ending
+    """
+    # ... function body
     prompt = f"Write a short children's story for ages 3-8 about {image_desc}. Use simple words, happy ending, 50-100 words: Once upon a time,"
     
     tokenizer = story_model["tokenizer"]
@@ -80,6 +91,7 @@ def generate_story(story_model, image_desc):
 
 # Text to audio
 def text_to_audio(tts_model, text):
+    """Convert text to audio array and sample rate."""
     model = tts_model["model"]
     tokenizer = tts_model["tokenizer"]
     
